@@ -1,0 +1,20 @@
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "octopus-aiida"
+version = "0.1.0"
+description = "Octopus plugin for AIIDA"
+dependencies = [
+    "aiida-core>=2.0,<3",
+]
+
+[project.entry-points."aiida.calculations"]
+"octopus-gs" = "octopus_aiida.calculations:OctopusCalculation"
+
+[project.entry-points."aiida.parsers"]
+"octopus-gs" = "octopus_aiida.parsers:OctopusParser"
+
+[tool.flit.module]
+name = "octopus_aiida"
