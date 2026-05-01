@@ -5,20 +5,20 @@ from aiida import engine, orm
 from aiida.common.exceptions import NotExistent
 
 DIR = Path(__file__).resolve().parent
+CODE_LABEL = 'octopus-static@localhost'
 
 
 # Create or load code
 computer = orm.load_computer('localhost')
 try:
-    code = orm.load_code('octopus-gs@localhost')
+    code = orm.load_code(CODE_LABEL)
 except NotExistent:
-    # Setting up code via python API (or use "verdi code setup")
     code = orm.InstalledCode(
-        label='octopus',
+        label='octopus-static',
         computer=computer,
         filepath_executable='/lib/octopus/release-serial/bin/octopus',
         default_calc_job_plugin='octopus.static'
-    )
+    ).store()
 
 # Set up inputs
 builder = code.get_builder()
@@ -39,5 +39,3 @@ for line in lines[-nlines:]:
 
 print('Convergence:')
 print(result['convergence'].get_dict())
-
-

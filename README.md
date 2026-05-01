@@ -45,7 +45,7 @@ cd /workspace/aiida-plugin
 pip install -e .
 ```
 
-To run from the plugin root (`/workspace/aiida-plugin`):
+To run from the plugin root in the container (`/workspace/aiida-plugin`):
 
 ```shell
 # Run the job
