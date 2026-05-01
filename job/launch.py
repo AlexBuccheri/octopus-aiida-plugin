@@ -16,18 +16,28 @@ except NotExistent:
     code = orm.InstalledCode(
         label='octopus',
         computer=computer,
-        filepath_executable='/home/aiida/octopus/cmake-build-release/octopus',
-        default_calc_job_plugin='octopus-gs'
+        filepath_executable='/lib/octopus/release-serial/bin/octopus',
+        default_calc_job_plugin='octopus.static'
     )
 
 # Set up inputs
 builder = code.get_builder()
+# TODO Add input generation here
 builder.inp = orm.SinglefileData(file=DIR / 'inp')
 builder.metadata.description = 'Test job submission with the aiida Octopus plugin'
 
 # Run the calculation & parse results
 result = engine.run(builder)
-out = result['octopus'].get_content()
 
-print('Octopus output:')
-print(out)
+# Outputs
+nlines = 10
+print(f'Last {nlines} lines of Octopus standard output:')
+stout: str = result['octopus'].get_content()
+lines = stout.splitlines()
+for line in lines[-nlines:]:
+    print(line)
+
+print('Convergence:')
+print(result['convergence'].get_dict())
+
+
