@@ -12,6 +12,21 @@ docker pull aiidateam/aiida-core-with-services:latest
 which automatically sets up the postgres database. One can check the docker logs or run `verdi status` to get the 
 status of the services. AIIDA has some documentation on developing in docker [here](https://aiida.readthedocs.io/projects/aiida-core/en/latest/intro/run_docker.html.
 
+A docker image is built with:
+
+```shell
+#DOCKER_BUILDKIT=1 docker compose build
+# my outdated installation
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose-v1 build
+```
+
+and interactively run with:
+
+```shell
+# docker compose run --rm app
+# my outdated installation
+docker-compose-v1 run --rm app
+```
 
 ## Installing the oct_plugin Project and Running the Plugin
 
@@ -19,17 +34,22 @@ Developing a basic plugin is documented [here](https://aiida.readthedocs.io/proj
 After initialising the container:
 
 ```shell
-# Install the plugin
-cd /oct_plugin
+# Install postopus
+cd /workspace/postopus
 pip install -e .
 ```
 
 ```shell
+# Install the octopus AiiDA plugin. 
+cd /workspace/aiida-plugin
+pip install -e .
+```
+
+To run from the plugin root (`/workspace/aiida-plugin`):
+
+```shell
 # Run the job
 cd job
-# Run the test manually
-octopus
-# Run via verdi
 verdi run launch.py
 ```
 
@@ -40,8 +60,7 @@ For more examples, see the [AIIDA plugin repository](https://github.com/PSDI-Bio
 ## (Attempting) to Building a Dockerfile from Scratch
 
 Rather than use `aiidateam/aiida-core-with-services` base image, one can attempt to build their
-own dockefile. This has been explored in [dockerfiles/Dockerfile](dockerfiles/Dockerfile), however
-I did not complete the file.
+own dockefile. This is described below
 
 Configuring with Pycharm:
  * Port 5432:5432
