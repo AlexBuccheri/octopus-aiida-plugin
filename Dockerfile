@@ -1,8 +1,10 @@
+# syntax=docker/dockerfile:1.7
 # Dockerfile for Octopus plus AIIDA
 #
 # Commands
 # -----------------------
-# docker build --build-arg NB_UID=200 -t octopus-aiida .
+# DOCKER_BUILDKIT=1 docker build --build-arg NB_UID=200 -t octopus-aiida .
+# or build with the higher-level docker compose (see compose.yml and README.md)
 #
 # Dockerfile notes
 # -----------------------
@@ -26,8 +28,8 @@ ENV DEBIAN_FRONTEND noninteractive
 # switch back to aiida user at the end of the Dockerfile
 USER root
 
-# NOTE gfortran 11 will get used
-RUN apt-get update && apt-get install -y  \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc-12 g++-12 gfortran-12 \
     curl \
     pkgconf \
     cmake \
@@ -35,22 +37,16 @@ RUN apt-get update && apt-get install -y  \
     git \
     build-essential
 
-RUN apt-get update && apt-get install -y  \
-    libopenmpi-dev \
-    libopenblas-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libopenblas-openmp-dev \
-    libopenblas-pthread-dev \
-    libopenblas-serial-dev
-
-RUN apt-get update && apt-get install -y  \
     libfftw3-dev \
     libgsl-dev \
     libxc-dev \
     libmetis-dev
 
-# Allow openMPI to run in docker
-ENV OMPI_ALLOW_RUN_AS_ROOT=1
-ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
+ENV CC=gcc-12
+ENV CXX=g++-12
+ENV FC=gfortran-12
 
 #Terminal colour
 RUN /bin/bash -c 'echo -e "export LS_OPTIONS=\"--color=auto\"\nalias ls=\"ls \$LS_OPTIONS\"" >> /root/.bashrc'
@@ -58,31 +54,59 @@ RUN /bin/bash -c 'echo -e "export LS_OPTIONS=\"--color=auto\"\nalias ls=\"ls \$L
 # Shell shortcuts
 RUN /bin/bash -c 'echo "alias ..=\"cd ../\"" >> /root/.bashrc'
 
+# Required in order to start the services
 USER aiida
+ENV PATH="/home/aiida/.local/bin:${PATH}"
 
-# cmake packaged with OS is too old
-RUN conda install cmake
+# cmake packaged with OS is too old (3.22.1)
+RUN pip install cmake
 
-# Install Octopus Serial Build
+# Install Octopus Serial
 # Clone
 RUN git clone --depth=1 https://gitlab.com/octopus-code/octopus.git
 
+# Installation directory and add it to the PATH
+ENV OCTOPUS_ROOT=/lib/octopus/release-serial
+ENV PATH="${OCTOPUS_ROOT}/bin:${PATH}"
+
 # Configure
-RUN cd octopus && cmake --preset default --fresh -G Ninja \
-    -DCMAKE_DISABLE_FIND_PACKAGE_Libxc=On \
-    -DCMAKE_INSTALL_PREFIX=/lib/octopus_gcc11/release-serial
+#RUN --mount=type=cache,target=/home/aiida/octopus/cmake-build-release,uid=200,gid=200 \
+#    cd octopus && cmake --preset default -G Ninja \
+#      -DCMAKE_DISABLE_FIND_PACKAGE_Libxc=On \
+#      -DOCTOPUS_ADIOS2=Off \
+#      -DCMAKE_INSTALL_PREFIX=${OCTOPUS_ROOT}
+#
+## Build
+#RUN --mount=type=cache,target=/home/aiida/octopus/cmake-build-release,uid=200,gid=200 \
+#    cd octopus && cmake --build cmake-build-release -j "$(nproc)"
+#
+## Install as root
+#USER root
+#RUN --mount=type=cache,target=/home/aiida/octopus/cmake-build-release,uid=200,gid=200 \
+#    cd /home/aiida/octopus && cmake --install ./cmake-build-release
+#
+## Run a single test as a sanity check
+#RUN --mount=type=cache,target=/home/aiida/octopus/cmake-build-release,uid=200,gid=200 \
+#    cd /home/aiida/octopus && \
+#    ctest --test-dir ./cmake-build-release -R 14-silicon_shifts --output-on-failure
+
+
+# Building with GCC12 because octopus release build fails with GCC11
+RUN cd octopus && cmake --preset default -G Ninja \
+      -DCMAKE_DISABLE_FIND_PACKAGE_Libxc=On \
+      -DOCTOPUS_ADIOS2=Off \
+      -DCMAKE_INSTALL_PREFIX=${OCTOPUS_ROOT}
 
 # Build
-RUN cd octopus && cmake --build cmake-build-release -j 4
+RUN cd octopus && cmake --build cmake-build-release -j "$(nproc)"
 
 # Install as root
 USER root
-RUN cd octopus && cmake --install ./cmake-build-release
+RUN cd /home/aiida/octopus && cmake --install ./cmake-build-release
 
-# Check tests
-# ctest --test-dir ./cmake-build-release -L short-run
+# Run a single test as a sanity check
+RUN cd /home/aiida/octopus && \
+    ctest --test-dir ./cmake-build-release -R 14-silicon_shifts --output-on-failure
 
 # Switch back user and working dir prior to spinning up DB services in the container
 USER aiida
-
-ENV PATH="/lib/octopus_gcc11/release-serial/bin:${PATH}"
