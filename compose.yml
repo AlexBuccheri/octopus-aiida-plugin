@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        NB_UID: 200
+    image: octopus-aiida
+
+    volumes:
+      - type: bind
+        source: /Users/alexanderbuccheri/Codes/postopus
+        target: /workspace/postopus
+      - type: bind
+        source: ./
+        target: /workspace/aiida-plugin
+
+    working_dir: /workspace/aiida-plugin
+    command: bash
