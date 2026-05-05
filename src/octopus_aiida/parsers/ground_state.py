@@ -8,10 +8,14 @@ from pandas import DataFrame
 from postopus.files import PandasTextFile
 
 
-class OctopusStaticParser(Parser):
-    """Parser for Octopus static/ outputs"""
+class OctopusGSParser(Parser):
+    """Parser for Octopus static/ outputs
 
-    _STATIC_FILES = ['convergence', 'forces'] # 'info' not currently set in calculations
+    TODOs:
+    * Add info to _STATIC_FILES, _check_files and parse
+    """
+
+    _STATIC_FILES = ['convergence', 'forces']
 
 
     def _check_files(self, output_filename) -> ExitCode | None:
@@ -27,7 +31,6 @@ class OctopusStaticParser(Parser):
         except OSError:
             return self.exit_codes.ERROR_MISSING_OUTPUT_FILES
 
-        # TODO(Alex) Move this into a OctopusExecParser(Parser)
         # Calculation did not terminate cleanly
         exec_files = set(self.retrieved.list_object_names('exec'))
         if 'oct-status-finished' not in exec_files:
@@ -63,6 +66,8 @@ class OctopusStaticParser(Parser):
         return None
 
     def read_static(self, name: str) -> DataFrame:
+        """Wrapper around Postopus PandasTextFile parser."""
+
         with self.retrieved.as_path(f"static/{name}") as file_path:
             f = PandasTextFile(file_path)
             data = f.values
@@ -94,6 +99,13 @@ class OctopusStaticParser(Parser):
 
         self.out('convergence', Dict(dict=parsed.to_dict()))
 
-        # TODO Add forces and info
+        # Parse static/forces using Postopus module.
+        try:
+            parsed = self.read_static("forces")
+        except Exception as exc:
+            self.logger.exception(f"Failed to parse static/forces: {exc}")
+            return self.exit_codes.ERROR_PARSING_FORCES
+
+        self.out('forces', Dict(dict=parsed.to_dict()))
 
         return ExitCode(0)

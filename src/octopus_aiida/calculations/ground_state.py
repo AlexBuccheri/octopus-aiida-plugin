@@ -3,8 +3,12 @@ from aiida.engine import CalcJob
 from aiida.orm import AbstractCode, SinglefileData, Dict
 
 
-class OctopusStaticCalculation(CalcJob):
-    """AiiDA calculation plugin wrapping the Octopus executable."""
+class OctopusGSCalculation(CalcJob):
+    """AiiDA calculation plugin wrapping the Octopus executable
+    for a ground state calculation."""
+
+    # TODOs
+    # * Add info to the spec and the retrieve_list
 
     _OCT_FINISHED = 'exec/oct-status-finished'
     _INPUT_FILE = 'inp'
@@ -15,20 +19,19 @@ class OctopusStaticCalculation(CalcJob):
     @classmethod
     def define(cls, spec):
         """Define inputs and outputs of the calculation."""
-        super(OctopusStaticCalculation, cls).define(spec)
+        super(OctopusGSCalculation, cls).define(spec)
 
         spec.input('code', valid_type=AbstractCode, help='The Octopus binary')
         spec.input('inp', valid_type=SinglefileData, help='Octopus input file')
 
         # Std-out output_filename
         spec.input('metadata.options.output_filename', valid_type=str, default='oct.stdout')
-        # Node to attach std-out to via output_filename (specified in OctopusStaticParser)
+        # Node to attach std-out to via output_filename (specified in OctopusGSParser)
         spec.output('octopus', valid_type=SinglefileData, required=False)
 
         # static/ outputs
         spec.output('convergence', valid_type=Dict, required=False)
         spec.output('forces', valid_type=Dict, required=False)
-        # TODO Add info
 
         # Default = Serial execution
         spec.inputs['metadata']['options']['resources'].default = {
@@ -37,9 +40,9 @@ class OctopusStaticCalculation(CalcJob):
         }
 
         # Note that the default is not set to the Parser class itself,
-        # but to the entry point string under which the parser class is registered.
-        # i.e. the specific module of the plugin. See pyproject.toml
-        spec.inputs['metadata']['options']['parser_name'].default = 'octopus.static'
+        # but to the entry point module string where the parser class is defined.
+        # This is specified in pyproject.toml
+        spec.inputs['metadata']['options']['parser_name'].default = 'octopus.ground_state'
 
         # Error codes: https://aiida.readthedocs.io/projects/aiida-core/en/latest/topics/processes/usage.html#topics-processes-usage-exit-code-conventions
         # 300 - 399: Suggested for critical process errors
@@ -51,6 +54,9 @@ class OctopusStaticCalculation(CalcJob):
         )
         spec.exit_code(
             310, 'ERROR_PARSING_CONVERGENCE', message='Failed to parse static/convergence.'
+        )
+        spec.exit_code(
+            311, 'ERROR_PARSING_FORCES', message='Failed to parse static/forces.'
         )
 
     def prepare_for_submission(self, folder):

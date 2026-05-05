@@ -11,10 +11,10 @@ dependencies = [
 ]
 
 [project.entry-points."aiida.calculations"]
-"octopus.static" = "octopus_aiida.calculations:OctopusStaticCalculation"
+"octopus.ground_state" = "octopus_aiida.calculations.ground_state:OctopusGSCalculation"
 
 [project.entry-points."aiida.parsers"]
-"octopus.static" = "octopus_aiida.parsers:OctopusStaticParser"
+"octopus.ground_state" = "octopus_aiida.parsers.ground_state:OctopusGSParser"
 
 [tool.flit.module]
 name = "octopus_aiida"
