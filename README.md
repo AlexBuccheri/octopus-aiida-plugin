@@ -35,13 +35,11 @@ After initialising the container:
 
 ```shell
 # Install postopus
-cd /workspace/postopus
-pip install -e .
+pip install -e /workspace/postopus/.
 ```
 
 ```shell
 # Install the octopus AiiDA plugin. 
-cd /workspace/aiida-plugin
 pip install -e .
 ```
 
@@ -49,8 +47,7 @@ To run from the plugin root in the container (`/workspace/aiida-plugin`):
 
 ```shell
 # Run the job
-cd job
-verdi run launch.py
+verdi run job/launch.py
 ```
 
 For more examples, see the [AIIDA plugin repository](https://github.com/PSDI-Biomolecular-team/aiida-gromacs/tree/master/aiida_gromacs, and various plugins - for example 
