@@ -29,6 +29,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+release = [
+    "build>=1,<2",
+    "twine>=5,<7",
+]
 tests = [
     "pgtest>=1.3",
     "pytest>=8,<9",
@@ -51,3 +55,19 @@ filterwarnings = [
 
 [tool.flit.module]
 name = "octopus_aiida"
+
+[tool.flit.sdist]
+include = [
+    "src/",
+    "tests/",
+    "README.md",
+    "LICENSE",
+]
+exclude = [
+    ".env",
+    ".idea/",
+    ".pytest_cache/",
+    "compose.yml",
+    "Dockerfile",
+    "**/__pycache__/",
+]
