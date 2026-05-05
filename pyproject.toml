@@ -3,7 +3,7 @@ requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "octopus-aiida"
+name = "aiida-octopus"
 version = "0.1.0"
 description = "AiiDA plugin for running and parsing Octopus calculations"
 readme = "README.md"
@@ -48,13 +48,13 @@ filterwarnings = [
 ]
 
 [project.entry-points."aiida.calculations"]
-"octopus.ground_state" = "octopus_aiida.calculations.ground_state:OctopusGSCalculation"
+"octopus.ground_state" = "aiida_octopus.calculations.ground_state:OctopusGSCalculation"
 
 [project.entry-points."aiida.parsers"]
-"octopus.ground_state" = "octopus_aiida.parsers.ground_state:OctopusGSParser"
+"octopus.ground_state" = "aiida_octopus.parsers.ground_state:OctopusGSParser"
 
 [tool.flit.module]
-name = "octopus_aiida"
+name = "aiida_octopus"
 
 [tool.flit.sdist]
 include = [
