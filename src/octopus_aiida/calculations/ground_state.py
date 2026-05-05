@@ -93,6 +93,5 @@ class OctopusGSCalculation(CalcJob):
             (self._CONVERGENCE_FILE, '.', 2),
             (self._FORCES_FILE, '.', 2)
         ]
-        # TODO Add files one does not need to fully retain to calcinfo.retrieve_temporary_list = []
 
         return calcinfo

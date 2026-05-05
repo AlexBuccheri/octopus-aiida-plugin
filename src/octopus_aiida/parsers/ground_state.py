@@ -4,12 +4,11 @@ from aiida.engine import ExitCode
 from aiida.orm import SinglefileData, Dict
 from aiida.parsers.parser import Parser
 
-from pandas import DataFrame
 from postopus.files import PandasTextFile
 
 
 class OctopusGSParser(Parser):
-    """Parser for Octopus static/ outputs
+    """Parser for Octopus static/ outputs.
 
     TODOs:
     * Add info to _STATIC_FILES, _check_files and parse
@@ -18,11 +17,10 @@ class OctopusGSParser(Parser):
     _STATIC_FILES = ['convergence', 'forces']
 
 
-    def _check_files(self, output_filename) -> ExitCode | None:
-        """ Check files are present
+    def _check_files(self) -> ExitCode | None:
+        """ Check that the expected files are present.
 
-        :param output_filename:
-        :return:
+        :return: None on success. Exit code on failure.
         """
 
         # Calculation did not return any output files
@@ -37,6 +35,7 @@ class OctopusGSParser(Parser):
             return self.exit_codes.ERROR_CALCULATION_NOT_FINISHED
 
         # Presence of std-out
+        output_filename = self.node.get_option('output_filename')
         if output_filename not in files_retrieved:
             self.logger.error(
                 f"Missing stdout file '{output_filename}'. "
@@ -44,7 +43,7 @@ class OctopusGSParser(Parser):
             )
             return self.exit_codes.ERROR_MISSING_OUTPUT_FILES
 
-        # Check static/ output directory present
+        # Check static/ output directory is present
         if 'static' not in files_retrieved:
             self.logger.error(
                 f"Missing retrieved 'static' directory. "
@@ -65,27 +64,28 @@ class OctopusGSParser(Parser):
 
         return None
 
-    def read_static(self, name: str) -> DataFrame:
-        """Wrapper around Postopus PandasTextFile parser."""
+    def read_static(self, name: str) -> dict:
+        """Wrapper around Postopus PandasTextFile parser.
 
+        :param: name: File name
+        :return: Parsed data
+        """
         with self.retrieved.as_path(f"static/{name}") as file_path:
             f = PandasTextFile(file_path)
             data = f.values
             if hasattr(data, "attrs"):
                 data.attrs = f.attrs
-            return data
+            return data.to_dict()
 
     def parse(self, **kwargs):
         """Parse outputs, store results in database."""
 
-        # Std-out
-        output_filename = self.node.get_option('output_filename')
-
-        exit_code = self._check_files(output_filename)
+        exit_code = self._check_files()
         if exit_code is not None:
             return exit_code
 
         # Store stdout as a raw output node.
+        output_filename = self.node.get_option('output_filename')
         self.logger.info(f"Parsing '{output_filename}'")
         with self.retrieved.open(output_filename, 'rb') as handle:
             self.out('octopus', SinglefileData(file=handle))
@@ -97,7 +97,7 @@ class OctopusGSParser(Parser):
             self.logger.exception(f"Failed to parse static/convergence: {exc}")
             return self.exit_codes.ERROR_PARSING_CONVERGENCE
 
-        self.out('convergence', Dict(dict=parsed.to_dict()))
+        self.out('convergence', Dict(dict=parsed))
 
         # Parse static/forces using Postopus module.
         try:
@@ -106,6 +106,6 @@ class OctopusGSParser(Parser):
             self.logger.exception(f"Failed to parse static/forces: {exc}")
             return self.exit_codes.ERROR_PARSING_FORCES
 
-        self.out('forces', Dict(dict=parsed.to_dict()))
+        self.out('forces', Dict(dict=parsed))
 
         return ExitCode(0)

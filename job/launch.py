@@ -38,7 +38,7 @@ lines = stout.splitlines()
 for line in lines[-nlines:]:
     print(line)
 
-# Assert on some arbitrary data fields
+# Assert on some arbitrary data fields of the parsed data
 convergence = result['convergence'].get_dict()
 assert len(convergence['energy']) == 3, 'Expect an initial guess plus 2 SCF steps'
 assert np.isclose(convergence['energy']['3'], -48.9235416)
